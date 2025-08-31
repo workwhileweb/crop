@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import clsx from 'clsx';
 import { observer } from 'mobx-react-lite';
-import { BsDownload } from 'react-icons/bs';
+import { BsDownload, BsMusicNote } from 'react-icons/bs';
 import { runInAction } from 'mobx';
 
 import styles from './Render.module.scss';
@@ -100,6 +100,48 @@ export const Render: React.FC = observer(() => {
     setOutputUrl(URL.createObjectURL(newFile));
   };
 
+  const extractAudio = async () => {
+    const args: string[] = [];
+
+    const { time } = mainStore.transform;
+
+    if (time) {
+      let start = 0;
+      if (time[0] > 0) {
+        start = time[0];
+        args.push('-ss', `${start}`);
+      }
+
+      if (time[1] < video.duration) {
+        args.push('-t', `${time[1] - start}`);
+      }
+    }
+
+    // Extract audio only
+    args.push('-vn'); // No video
+    args.push('-c:a', 'mp3'); // Convert to MP3
+    args.push('-q:a', '2'); // High quality audio
+
+    try {
+      const audioFile = await ffmpeg.exec(mainStore.file!, args);
+      const audioUrl = URL.createObjectURL(audioFile);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = audioUrl;
+      link.download = 'extracted_audio.mp3';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the URL
+      URL.revokeObjectURL(audioUrl);
+    } catch (error) {
+      console.error('Error extracting audio:', error);
+      alert('Failed to extract audio. Please try again.');
+    }
+  };
+
   return (
     <div className={styles.step}>
       {ffmpeg.running ? (
@@ -136,8 +178,12 @@ export const Render: React.FC = observer(() => {
             </div>
           </div>
           <div className={styles.actions}>
-            <button onClick={crop}>
+            <button onClick={crop} disabled={ffmpeg.running}>
               <span>Render MP4</span>
+            </button>
+            <button onClick={extractAudio} disabled={ffmpeg.running}>
+              <BsMusicNote />
+              <span>Save Audio to File</span>
             </button>
             {outputUrl && (
               <a

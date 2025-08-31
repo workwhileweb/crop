@@ -134,10 +134,20 @@ class FfmpegStore {
         'input',
         new Uint8Array(await file.arrayBuffer()),
       );
-      await this.ffmpeg.exec(['-i', 'input', ...args, 'output.mp4']);
+      
+      // Determine output format based on args
+      const isAudioOnly = args.includes('-vn');
+      const outputFile = isAudioOnly ? 'output.mp3' : 'output.mp4';
+      const outputType = isAudioOnly ? 'audio/mp3' : 'video/mp4';
+      
+      await this.ffmpeg.exec(['-i', 'input', ...args, outputFile]);
 
-      const data = (await this.ffmpeg.readFile('output.mp4')) as Uint8Array;
-      return new File([data.buffer], 'output.mp4', { type: 'video/mp4' });
+      const data = (await this.ffmpeg.readFile(outputFile)) as Uint8Array;
+
+      //return new File([data.buffer], outputFile, { type: outputType });
+      // Convert Uint8Array to regular ArrayBuffer to avoid SharedArrayBuffer type issues
+      const regularArrayBuffer = new Uint8Array(data).buffer;
+      return new File([regularArrayBuffer], outputFile, { type: outputType });
     } finally {
       try {
         await this.ffmpeg.deleteFile('input');
@@ -146,6 +156,11 @@ class FfmpegStore {
       }
       try {
         await this.ffmpeg.deleteFile('output.mp4');
+      } catch {
+        //
+      }
+      try {
+        await this.ffmpeg.deleteFile('output.mp3');
       } catch {
         //
       }
