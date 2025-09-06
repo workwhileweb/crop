@@ -1,0 +1,19 @@
+https://github.com/workwhileweb/crop
+https://dash.deno.com/projects/cropvideo/success
+
+https://cropvideo.deno.dev/
+
+https://docs.deno.com/deploy/tutorials/vite/
+
+
+deno install -gArf jsr:@deno/deployctl
+deployctl deploy
+
+deno install
+
+You can give your project a name or allow Deno to generate one for you.
+Select Vite from the Framework Preset dropdown. This will populate the Entrypoint form field.
+Leave the Install step empty.
+Set the Build step to deno task build.
+Set the Root directory to dist
+Click Deploy Project
